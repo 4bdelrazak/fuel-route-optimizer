@@ -1,0 +1,25 @@
+# One service is all this needs: the API with a SQLite file on a named volume.
+# There is no database server because the dataset is ~6,500 rows and every
+# geographic calculation happens in Python (see "Design decisions" in README.md).
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      DJANGO_DEBUG: "false"
+      DJANGO_SECRET_KEY: "${DJANGO_SECRET_KEY:-docker-compose-demo-key-change-me}"
+      DJANGO_ALLOWED_HOSTS: "localhost,127.0.0.1"
+      DJANGO_SECURE_SSL_REDIRECT: "false"
+      DJANGO_DB_PATH: "/app/state/db.sqlite3"
+      NOMINATIM_USER_AGENT: "fuel-route-optimizer/1.0 (assessment demo)"
+    volumes:
+      - api-state:/app/state
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/schema/')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  api-state:
