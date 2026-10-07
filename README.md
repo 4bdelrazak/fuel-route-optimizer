@@ -52,6 +52,9 @@ flowchart TD
     Response --> Client
 ```
 
+Four more views, including the request sequence, the fuel policy as a flowchart
+and a real plan end to end, are in [docs/architecture.md](docs/architecture.md).
+
 Responsibilities are split so that nothing above the integrations layer knows
 which external provider is in use.
 
