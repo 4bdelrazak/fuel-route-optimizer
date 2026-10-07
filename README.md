@@ -519,7 +519,7 @@ does not persist for a month.
 pytest
 ```
 
-219 tests, no network access. Both external providers are replaced at the single
+225 tests, no network access. Both external providers are replaced at the single
 seam `routes/services/providers.py` exposes, so the suite runs offline and the
 number of provider calls is observable and asserted.
 
@@ -548,6 +548,8 @@ pytest --cov=core --cov=fuel --cov=integrations --cov=routes --cov-report=term-m
   bodies, malformed payloads, and OSRM's `NoRoute` code, all mocked.
 - **Caching.** Repeat requests, case-insensitive keys, direction sensitivity, and
   that failures are not cached.
+- **Logging.** That routing and geocoding requests, optimization failures and the
+  import summary are logged, and that a user-supplied location never is.
 
 Linting:
 
