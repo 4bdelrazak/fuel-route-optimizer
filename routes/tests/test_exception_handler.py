@@ -1,3 +1,5 @@
+import logging
+
 from rest_framework.exceptions import NotFound, Throttled
 
 from core.errors import ApiError, NoFeasibleFuelPlan
@@ -33,12 +35,19 @@ def test_drf_not_found_keeps_its_status():
     assert handle(NotFound()).status_code == 404
 
 
-def test_an_unexpected_error_is_not_described_to_the_client(caplog):
-    response = handle(ZeroDivisionError("secret internal detail"))
+def test_an_unexpected_error_is_logged_for_operators_but_never_rendered(caplog):
+    """A bug must reach the logs in full and the client not at all.
 
-    assert response is None, "DRF falls through to a bodyless 500"
-    assert "secret internal detail" not in caplog.text.split("Traceback")[0].split("\n")[0]
+    The logger is named explicitly because the `routes` logger does not
+    propagate to the root logger, and whether caplog's root handler sees a
+    non-propagating record differs between pytest versions.
+    """
+    with caplog.at_level(logging.ERROR, logger="routes.exception_handler"):
+        response = handle(ZeroDivisionError("secret internal detail"))
+
+    assert response is None, "DRF falls through to a bodyless 500, so no body is rendered"
     assert "Unhandled exception" in caplog.text
+    assert caplog.records[0].exc_info is not None, "the traceback is logged too"
 
 
 def test_the_base_error_has_a_safe_default():
