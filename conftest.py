@@ -135,3 +135,32 @@ def projected_station(position_miles: float, price: float, detour_miles: float =
         route_distance_miles=position_miles,
         detour_miles=detour_miles,
     )
+
+
+@pytest.fixture
+def app_logs(caplog):
+    """Capture log records from one of the application loggers.
+
+    `routes`, `fuel` and `integrations` are configured not to propagate to the
+    root logger, so console output is not duplicated. caplog only installs its
+    handler at the root, and `caplog.at_level` sets a level without attaching
+    anything, so the handler has to go on the logger under test directly.
+    Keeping that here leaves the tests free of logging plumbing and works on any
+    pytest version.
+    """
+    import logging
+    from contextlib import contextmanager
+
+    @contextmanager
+    def capture(name: str, level: int = logging.INFO):
+        logger = logging.getLogger(name)
+        previous_level = logger.level
+        logger.addHandler(caplog.handler)
+        logger.setLevel(level)
+        try:
+            yield caplog
+        finally:
+            logger.setLevel(previous_level)
+            logger.removeHandler(caplog.handler)
+
+    return capture

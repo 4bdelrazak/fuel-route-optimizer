@@ -35,19 +35,14 @@ def test_drf_not_found_keeps_its_status():
     assert handle(NotFound()).status_code == 404
 
 
-def test_an_unexpected_error_is_logged_for_operators_but_never_rendered(caplog):
-    """A bug must reach the logs in full and the client not at all.
-
-    The logger is named explicitly because the `routes` logger does not
-    propagate to the root logger, and whether caplog's root handler sees a
-    non-propagating record differs between pytest versions.
-    """
-    with caplog.at_level(logging.ERROR, logger="routes.exception_handler"):
+def test_an_unexpected_error_is_logged_for_operators_but_never_rendered(app_logs):
+    """A bug must reach the logs in full and the client not at all."""
+    with app_logs("routes.exception_handler", logging.ERROR) as logs:
         response = handle(ZeroDivisionError("secret internal detail"))
 
     assert response is None, "DRF falls through to a bodyless 500, so no body is rendered"
-    assert "Unhandled exception" in caplog.text
-    assert caplog.records[0].exc_info is not None, "the traceback is logged too"
+    assert "Unhandled exception" in logs.text
+    assert logs.records[0].exc_info is not None, "the traceback is logged too"
 
 
 def test_the_base_error_has_a_safe_default():
