@@ -1,0 +1,155 @@
+{
+  "info": {
+    "name": "Fuel Route Optimizer API",
+    "description": "Plans a US driving route and its cost-optimal fuel stops for a 500 mile range, 10 MPG vehicle.\n\nSet the `baseUrl` collection variable if the API is not on http://localhost:8000.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [{ "key": "baseUrl", "value": "http://localhost:8000", "type": "string" }],
+  "item": [
+    {
+      "name": "Optimize - short route (no stop needed)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n    \"start\": \"Boston, MA\",\n    \"finish\": \"New York, NY\"\n}" },
+        "url": { "raw": "{{baseUrl}}/api/v1/routes/optimize/", "host": ["{{baseUrl}}"], "path": ["api", "v1", "routes", "optimize", ""] },
+        "description": "214 miles, inside the vehicle's 500 mile range, so `fuel_stops` comes back empty and the whole trip is bought at the start."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('route is under the vehicle range', () => pm.expect(body.route.distance_miles).to.be.below(500));",
+              "pm.test('no stop is required', () => pm.expect(body.fuel_plan.fuel_stops).to.be.an('array').that.is.empty);",
+              "pm.test('gallons match distance at 10 MPG', () => pm.expect(body.fuel_plan.total_gallons).to.be.closeTo(body.route.distance_miles / 10, 0.05));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Optimize - long route (several stops)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n    \"start\": \"New York, NY\",\n    \"finish\": \"Los Angeles, CA\"\n}" },
+        "url": { "raw": "{{baseUrl}}/api/v1/routes/optimize/", "host": ["{{baseUrl}}"], "path": ["api", "v1", "routes", "optimize", ""] },
+        "description": "About 2,794 miles, so the range forces several stops. Each one reports its price, gallons, cost and distance from the previous purchase."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));",
+              "const body = pm.response.json();",
+              "pm.test('several stops are planned', () => pm.expect(body.fuel_plan.fuel_stops.length).to.be.above(1));",
+              "const legs = body.fuel_plan.fuel_stops.map(s => s.distance_from_previous_miles).concat(body.fuel_plan.distance_to_finish_miles);",
+              "pm.test('no leg exceeds the 500 mile range', () => pm.expect(Math.max(...legs)).to.be.at.most(500.5));",
+              "const purchases = [body.fuel_plan.start_fill].concat(body.fuel_plan.fuel_stops);",
+              "pm.test('each cost is gallons times price', () => purchases.forEach(p => pm.expect(p.cost).to.be.closeTo(p.gallons * p.price_per_gallon, 0.02)));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Optimize - same start and finish",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n    \"start\": \"Dallas, TX\",\n    \"finish\": \"Dallas, TX\"\n}" },
+        "url": { "raw": "{{baseUrl}}/api/v1/routes/optimize/", "host": ["{{baseUrl}}"], "path": ["api", "v1", "routes", "optimize", ""] },
+        "description": "Answered without calling the routing API at all."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));",
+              "pm.test('nothing to drive or buy', () => { const b = pm.response.json(); pm.expect(b.route.distance_miles).to.eql(0); pm.expect(b.fuel_plan.total_cost).to.eql(0); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Optimize - location outside the USA (400)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n    \"start\": \"Boston, MA\",\n    \"finish\": \"Toronto, ON, Canada\"\n}" },
+        "url": { "raw": "{{baseUrl}}/api/v1/routes/optimize/", "host": ["{{baseUrl}}"], "path": ["api", "v1", "routes", "optimize", ""] }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+              "pm.test('rejected for being outside the USA', () => pm.expect(pm.response.json().error.code).to.eql('LOCATION_OUTSIDE_USA'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Optimize - unknown location (400)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n    \"start\": \"Asdfghjkl Qwertyuiop\",\n    \"finish\": \"New York, NY\"\n}" },
+        "url": { "raw": "{{baseUrl}}/api/v1/routes/optimize/", "host": ["{{baseUrl}}"], "path": ["api", "v1", "routes", "optimize", ""] }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+              "pm.test('reported as not found', () => pm.expect(pm.response.json().error.code).to.eql('LOCATION_NOT_FOUND'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Optimize - invalid body (400)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n    \"start\": \"Boston, MA\"\n}" },
+        "url": { "raw": "{{baseUrl}}/api/v1/routes/optimize/", "host": ["{{baseUrl}}"], "path": ["api", "v1", "routes", "optimize", ""] },
+        "description": "`finish` is missing, so the serializer rejects the request before any external call."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+              "pm.test('names the offending field', () => { const e = pm.response.json().error; pm.expect(e.code).to.eql('INVALID_INPUT'); pm.expect(e.fields).to.have.property('finish'); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "OpenAPI schema",
+      "request": {
+        "method": "GET",
+        "url": { "raw": "{{baseUrl}}/api/schema/", "host": ["{{baseUrl}}"], "path": ["api", "schema", ""] }
+      }
+    }
+  ]
+}
