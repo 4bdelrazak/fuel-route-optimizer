@@ -23,8 +23,9 @@ htmlcov/
 # The built gazetteer in data/ is committed; these are just its inputs.
 .census-cache/
 
-# Local work log, not part of the deliverable
+# Local notes, not part of the deliverable
 todo.md
+loom-script.md
 
 # Editors and OS
 .idea/
