@@ -3,6 +3,14 @@
 Five views of the same system, from the outside in. The README explains the
 reasoning; this file is the picture.
 
+GitHub renders the Mermaid below directly. The same diagrams are also committed
+as PNGs in [`diagrams/`](diagrams/) for viewing offline or dropping into a slide.
+To regenerate them after an edit:
+
+```bash
+npx -y @mermaid-js/mermaid-cli@11 -i docs/architecture.md -o docs/diagrams/architecture.md
+```
+
 ---
 
 ## 1. Components
