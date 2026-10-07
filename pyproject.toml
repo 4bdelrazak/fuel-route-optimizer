@@ -1,0 +1,35 @@
+[project]
+name = "fuel-route-optimizer"
+version = "1.0.0"
+description = "Django REST API that plans a US driving route and its cost-optimal fuel stops."
+requires-python = ">=3.12"
+dependencies = [
+    "django==6.1.2",
+    "djangorestframework==3.18.3",
+    "drf-spectacular==0.30.0",
+    "requests>=2.32",
+    "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.3", "pytest-django>=4.9", "pytest-cov>=6.0", "ruff>=0.8"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings"
+python_files = ["test_*.py"]
+addopts = "-q --strict-markers"
+testpaths = ["core", "fuel", "integrations", "routes"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+exclude = [".venv", "*/migrations/*"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "C4", "SIM", "RUF"]
+# B008: DRF and Django idiomatically call functions in argument defaults.
+# RUF012: Django model `Meta` attributes are lists by design.
+ignore = ["B008", "RUF012"]
+
+[tool.ruff.lint.per-file-ignores]
+"*/tests/*" = ["E501"]

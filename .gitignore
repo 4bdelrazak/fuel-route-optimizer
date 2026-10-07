@@ -1,0 +1,32 @@
+# Secrets and local configuration
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# Django
+db.sqlite3
+db.sqlite3-journal
+staticfiles/
+
+# Tests and tooling
+.pytest_cache/
+.coverage
+htmlcov/
+.ruff_cache/
+
+# Census source archives downloaded by scripts/build_city_coordinates.py.
+# The built gazetteer in data/ is committed; these are just its inputs.
+.census-cache/
+
+# Local work log, not part of the deliverable
+todo.md
+
+# Editors and OS
+.idea/
+.vscode/
+.DS_Store

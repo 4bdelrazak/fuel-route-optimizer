@@ -1,0 +1,7 @@
+# Runtime. Pinned so a reviewer gets exactly what was tested.
+django==6.1.2
+djangorestframework==3.18.3
+drf-spectacular==0.30.0
+requests==2.32.5
+python-dotenv==1.1.1
+gunicorn==23.0.0
