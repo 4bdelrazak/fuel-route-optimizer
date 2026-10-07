@@ -366,3 +366,19 @@ def test_the_endpoint_is_rate_limited(client, setup, monkeypatch):
 
     assert statuses == [200, 200, 429]
     assert client.post(URL, body, "application/json").json()["error"]["code"] == "THROTTLED"
+
+
+def test_the_schema_lists_every_error_code_the_endpoint_can_return(client, db):
+    """A reviewer reading the docs should see which codes exist, not just the shape."""
+    schema = client.get("/api/schema/").content.decode()
+
+    for code in (
+        "INVALID_INPUT",
+        "LOCATION_NOT_FOUND",
+        "LOCATION_OUTSIDE_USA",
+        "NO_ROUTE_FOUND",
+        "NO_FEASIBLE_FUEL_PLAN",
+        "ROUTING_SERVICE_UNAVAILABLE",
+        "GEOCODING_SERVICE_UNAVAILABLE",
+    ):
+        assert code in schema, f"{code} is missing from the OpenAPI schema"

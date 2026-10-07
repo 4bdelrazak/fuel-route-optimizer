@@ -522,7 +522,7 @@ does not persist for a month.
 pytest
 ```
 
-225 tests, no network access. Both external providers are replaced at the single
+226 tests, no network access. Both external providers are replaced at the single
 seam `routes/services/providers.py` exposes, so the suite runs offline and the
 number of provider calls is observable and asserted.
 
