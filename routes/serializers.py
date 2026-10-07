@@ -8,6 +8,34 @@ from __future__ import annotations
 
 from rest_framework import serializers
 
+from core.errors import (
+    GeocodingServiceUnavailable,
+    LocationNotFound,
+    LocationOutsideUsa,
+    NoFeasibleFuelPlan,
+    NoRouteFound,
+    RoutingServiceUnavailable,
+)
+
+ERROR_CODES = (
+    "INVALID_INPUT",
+    *(
+        error.code
+        for error in (
+            LocationNotFound,
+            LocationOutsideUsa,
+            NoRouteFound,
+            NoFeasibleFuelPlan,
+            RoutingServiceUnavailable,
+            GeocodingServiceUnavailable,
+        )
+    ),
+)
+"""Every code the optimize endpoint can return, so the schema lists them rather
+than describing `code` as a bare string. The codes are read off the error
+classes so the two cannot drift apart. INVALID_INPUT is named separately
+because it comes from DRF's validation, not from an `ApiError`."""
+
 
 class RoundedFloatField(serializers.FloatField):
     """A float rendered at a fixed number of decimals.
@@ -112,8 +140,15 @@ class TripPlanSerializer(serializers.Serializer):
 
 
 class ErrorBodySerializer(serializers.Serializer):
-    code = serializers.CharField()
-    message = serializers.CharField()
+    code = serializers.ChoiceField(
+        choices=[(code, code) for code in ERROR_CODES],
+        help_text="Stable machine-readable reason the request failed.",
+    )
+    message = serializers.CharField(help_text="A sentence suitable for showing to a user.")
+    fields = serializers.DictField(
+        required=False,
+        help_text="Present only for INVALID_INPUT, naming each field that failed validation.",
+    )
 
 
 class ErrorSerializer(serializers.Serializer):
